@@ -16,6 +16,8 @@ export class ModifyDisplay {
     private rectStartPoint?: DOMPoint;
     private rectEndPoint?: DOMPoint;
 
+    private lastCropRect: DOMRect;
+
     constructor() {
         this.modifyStream = this.modifyStream.bind(this);
         this.draw = this.draw.bind(this);
@@ -46,6 +48,34 @@ export class ModifyDisplay {
         };
 
         this.canvasPreviewElement.onmouseup = ev => {
+            this.rectEndPoint = this.computePoint(new DOMPoint(ev.x, ev.y));
+
+            const rectangleRadio = document.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
+            const cropRadio = document.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
+
+            const videoWorkspace = this.computeVideoWorkspace(this.lastCropRect.width, this.lastCropRect.height);
+
+            const rectSize = ModifyDisplay.convertTwoPointsToRect(this.rectStartPoint, this.rectEndPoint);
+
+            const x = rectSize.x - videoWorkspace.x;
+            const y = rectSize.y - videoWorkspace.y;
+
+            if (rectangleRadio.checked) {
+                this.offscreenContextElement.fillStyle = '#000000';
+                this.offscreenContextElement.fillRect(
+                    x / videoWorkspace.scale + this.lastCropRect.x,
+                    y / videoWorkspace.scale + this.lastCropRect.y,
+                    rectSize.width / videoWorkspace.scale,
+                    rectSize.height / videoWorkspace.scale);
+            }
+            if (cropRadio.checked) {
+                this.lastCropRect = new DOMRect(
+                    x / videoWorkspace.scale + this.lastCropRect.x,
+                    y / videoWorkspace.scale + this.lastCropRect.y,
+                    rectSize.width / videoWorkspace.scale,
+                    rectSize.height / videoWorkspace.scale);
+            }
+
             this.rectStartPoint = null;
             this.rectEndPoint = null;
         };
@@ -74,6 +104,7 @@ export class ModifyDisplay {
             this.offscreenCanvasElement.width = this.htmlVideoElement.width;
             this.offscreenCanvasElement.height = this.htmlVideoElement.height;
             this.offscreenContextElement = this.offscreenCanvasElement.getContext('2d');
+            this.lastCropRect = new DOMRect(0, 0, this.htmlVideoElement.width, this.htmlVideoElement.height);
 
             this.executeDraw();
         });
@@ -87,42 +118,44 @@ export class ModifyDisplay {
         this.canvasPreviewElement.width = computedSize.width;
         this.canvasPreviewElement.height = computedSize.height;
 
-        const videoWorkspace = this.computeVideoWorkspace();
+        const cropRect = this.lastCropRect;
 
-        this.contextPreviewElement.drawImage(this.htmlVideoElement, videoWorkspace.x, videoWorkspace.y, videoWorkspace.width, videoWorkspace.height);
-        this.contextPreviewElement.drawImage(this.offscreenCanvasElement, videoWorkspace.x, videoWorkspace.y, videoWorkspace.width, videoWorkspace.height);
+        const croppedWorkspace = this.computeVideoWorkspace(cropRect.width, cropRect.height);
+
+        this.contextPreviewElement.drawImage(this.htmlVideoElement,
+            cropRect.x, cropRect.y, cropRect.width, cropRect.height,
+            croppedWorkspace.x, croppedWorkspace.y, croppedWorkspace.width, croppedWorkspace.height);
+        this.contextPreviewElement.drawImage(this.offscreenCanvasElement,
+            cropRect.x, cropRect.y, cropRect.width, cropRect.height,
+            croppedWorkspace.x, croppedWorkspace.y, croppedWorkspace.width, croppedWorkspace.height);
 
         if (this.rectStartPoint && this.rectEndPoint) {
-            console.log('DRAW RECT!');
-            const x = Math.min(this.rectStartPoint.x, this.rectEndPoint.x);
-            const y = Math.min(this.rectStartPoint.y, this.rectEndPoint.y);
-            const width = Math.max(this.rectStartPoint.x, this.rectEndPoint.x) - x;
-            const height = Math.max(this.rectStartPoint.y, this.rectEndPoint.y) - y;
+            const rectSize = ModifyDisplay.convertTwoPointsToRect(this.rectStartPoint, this.rectEndPoint);
 
             this.contextPreviewElement.lineWidth = 10;
-            this.contextPreviewElement.strokeStyle = '#000000'
-            this.contextPreviewElement.strokeRect(x, y, width, height);
+            this.contextPreviewElement.strokeStyle = '#000000';
+            this.contextPreviewElement.strokeRect(rectSize.x, rectSize.y, rectSize.width, rectSize.height);
         }
 
         this.executeDraw();
     }
 
     private computePoint(point: DOMPoint): DOMPoint {
-        const videoWorkspace = this.computeVideoWorkspace();
+        const videoWorkspace = this.computeVideoWorkspace(this.lastCropRect.width, this.lastCropRect.height);
         let newX = point.x;
         let newY = point.y;
 
-        if(point.x < videoWorkspace.x) {
+        if (point.x < videoWorkspace.x) {
             newX = videoWorkspace.x;
         }
-        if(point.y < videoWorkspace.y) {
+        if (point.y < videoWorkspace.y) {
             newY = videoWorkspace.y;
         }
 
-        if(point.x > videoWorkspace.x + videoWorkspace.width) {
+        if (point.x > videoWorkspace.x + videoWorkspace.width) {
             newX = videoWorkspace.x + videoWorkspace.width;
         }
-        if(point.y > videoWorkspace.y + videoWorkspace.height) {
+        if (point.y > videoWorkspace.y + videoWorkspace.height) {
             newY = videoWorkspace.y + videoWorkspace.height;
         }
 
@@ -137,7 +170,15 @@ export class ModifyDisplay {
         };
     }
 
-    private computeVideoWorkspace(): { x: number, y: number, width: number, height: number } {
+    private static convertTwoPointsToRect(point1: DOMPoint, point2: DOMPoint): DOMRect {
+        const x = Math.min(point1.x, point2.x);
+        const y = Math.min(point1.y, point2.y);
+        const width = Math.max(point1.x, point2.x) - x;
+        const height = Math.max(point1.y, point2.y) - y;
+        return new DOMRect(x, y, width, height);
+    }
+
+    private computeVideoWorkspace(srcWidth: number, srcHeight: number): { x: number, y: number, width: number, height: number, scale: number } {
         const computedSize = this.computedSize();
         const offsetX = 10;
         const offsetY = 10;
@@ -145,11 +186,11 @@ export class ModifyDisplay {
         const availableHeight = computedSize.height - offsetY * 2;
 
         const scale = Math.min(
-            availableWidth / this.htmlVideoElement.width,
-            availableHeight / this.htmlVideoElement.height
+            availableWidth / srcWidth,
+            availableHeight / srcHeight
         );
-        const width = Math.floor(this.htmlVideoElement.width * scale);
-        const height = Math.floor(this.htmlVideoElement.height * scale);
+        const width = Math.floor(srcWidth * scale);
+        const height = Math.floor(srcHeight * scale);
 
         const x = Math.floor((computedSize.width - width) / 2);
         const y = Math.floor((computedSize.height - height) / 2);
@@ -159,6 +200,7 @@ export class ModifyDisplay {
             y,
             width,
             height,
+            scale
         };
     }
 
