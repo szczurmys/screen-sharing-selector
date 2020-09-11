@@ -3,15 +3,17 @@ import {ModifyDisplay} from './modify-display/modify-display';
 declare global {
     // noinspection JSUnusedGlobalSymbols
     interface MediaDevices {
-        getDisplayMedia(constraint?: MediaStreamConstraints): Promise<MediaStream>
-
-        getBackupDisplayMedia(constraint?: MediaStreamConstraints): Promise<MediaStream>
-
-        getBackupUserMedia(constraint?: MediaStreamConstraints): Promise<MediaStream>
+        getDisplayMedia(constraint?: MediaStreamConstraints): Promise<MediaStream>;
+        getBackupDisplayMedia(constraint?: MediaStreamConstraints): Promise<MediaStream>;
+        getBackupUserMedia(constraint?: MediaStreamConstraints): Promise<MediaStream>;
     }
 
     interface HTMLCanvasElement {
-        captureStream(frameRate?: number): MediaStream
+        captureStream(frameRate?: number): MediaStream;
+    }
+
+    interface MediaStreamTrack {
+        baseStop(): void;
     }
 }
 
@@ -90,7 +92,22 @@ export function initScreenSharingCropping() {
         const capturedStream = canvasElement.captureStream(getFrameRate(videoTrack.getSettings()));
         const capturedTrack = capturedStream.getVideoTracks()[0];
 
+        capturedTrack.baseStop = capturedTrack.stop;
+        capturedTrack.stop = () => {
+            capturedTrack.baseStop();
+            capturedTrack.dispatchEvent(new Event('ended'));
+        }
+
+        capturedTrack.addEventListener("ended", (ev) => {
+            if (videoTrack.readyState !== 'ended') {
+                console.log("ended capturedTrack");
+                videoTrack.stop();
+                videoTrack.dispatchEvent(new Event('ended', ev));
+            }
+        })
+
         videoTrack.addEventListener('ended', (ev) => {
+            console.log("ended videoTrack");
             modifyDisplay.externalCancel();
             capturedTrack.enabled = false;
             capturedTrack.stop();
@@ -100,7 +117,6 @@ export function initScreenSharingCropping() {
             videoElement.remove();
             logo.remove();
             capturedStream.removeTrack(capturedTrack);
-            capturedTrack.dispatchEvent(new Event('ended', ev));
         });
         ms.addEventListener('removetrack', (ev: MediaStreamTrackEvent) => {
             if (ev.track === videoTrack) {
