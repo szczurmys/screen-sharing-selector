@@ -2,8 +2,8 @@ import modifyDisplayCss from './modify-display.css';
 import modifyDisplayHtml from './modify-display.html';
 
 export class ModifyDisplay {
-    private mainElement: HTMLDivElement;
-    private styleElement: HTMLStyleElement;
+    private readonly mainElement: HTMLDivElement;
+    private readonly styleElement: HTMLStyleElement;
 
     private canvasPreviewElement: HTMLCanvasElement;
     private contextPreviewElement: CanvasRenderingContext2D;
@@ -35,14 +35,14 @@ export class ModifyDisplay {
     public modifyStream(htmlVideoElement: HTMLVideoElement): Promise<void> {
         this.htmlVideoElement = htmlVideoElement;
         return new Promise((resolve, reject) => {
-            document.getElementById('screen-sharing-selector-accept').onclick = ev => {
+            document.getElementById('screen-sharing-selector-accept').onclick = () => {
                 this.hide();
                 resolve();
                 document.getElementById('screen-sharing-selector-accept').onclick = null;
                 this.htmlVideoElement = null;
             };
 
-            document.getElementById('screen-sharing-selector-cancel').onclick = ev => {
+            document.getElementById('screen-sharing-selector-cancel').onclick = () => {
                 this.hide();
                 reject('Canceled by user.');
                 document.getElementById('screen-sharing-selector-cancel').onclick = null;
@@ -55,8 +55,6 @@ export class ModifyDisplay {
             this.offscreenCanvasElement.width = this.htmlVideoElement.width;
             this.offscreenCanvasElement.height = this.htmlVideoElement.height;
             this.offscreenContextElement = this.offscreenCanvasElement.getContext('2d');
-            // this.canvasPreviewElement.width = this.htmlVideoElement.width;
-            // this.canvasPreviewElement.height = this.htmlVideoElement.height;
 
             console.log('DRAW');
             this.executeDraw();

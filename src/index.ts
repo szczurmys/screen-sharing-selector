@@ -42,15 +42,15 @@ export function initScreenSharingCropping() {
 
     const modifyStream = (ms: MediaStream, videoTrack: MediaStreamTrack): Promise<MediaStream> => new Promise((resolve, _) => {
 
-        const videoElement = document.createElement('video') as HTMLVideoElement;
+        const videoElement = document.createElement('video');
         const newMediaStream = new MediaStream();
         newMediaStream.addTrack(videoTrack);
         videoElement.width = videoTrack.getSettings().width;
         videoElement.height = videoTrack.getSettings().height;
         videoElement.srcObject = newMediaStream;
 
-        const canvasElement = document.createElement('canvas') as HTMLCanvasElement;
-        const canvasOffscreenElement = document.createElement('canvas') as HTMLCanvasElement;
+        const canvasElement = document.createElement('canvas');
+        const canvasOffscreenElement = document.createElement('canvas');
 
 
         const context = canvasElement.getContext('2d', {alpha: false});
