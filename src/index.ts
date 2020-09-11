@@ -1,3 +1,5 @@
+import { ModifyDisplay } from './modify-display/modify-display'
+
 declare global {
     // noinspection JSUnusedGlobalSymbols
     interface MediaDevices {
@@ -19,6 +21,9 @@ function getFrameRate(settings: MediaTrackSettings) {
 
 // noinspection JSUnusedGlobalSymbols
 export function initScreenSharingCropping() {
+    const modifyDisplay = new ModifyDisplay();
+
+
     const logo = new Image();
     logo.crossOrigin = '';
     let logoLoaded = false;
@@ -40,13 +45,15 @@ export function initScreenSharingCropping() {
         const videoElement = document.createElement('video') as HTMLVideoElement;
         const newMediaStream = new MediaStream();
         newMediaStream.addTrack(videoTrack);
+        videoElement.width = videoTrack.getSettings().width;
+        videoElement.height = videoTrack.getSettings().height;
         videoElement.srcObject = newMediaStream;
 
         const canvasElement = document.createElement('canvas') as HTMLCanvasElement;
         const canvasOffscreenElement = document.createElement('canvas') as HTMLCanvasElement;
 
 
-        const context = canvasElement.getContext('2d', { alpha: false });
+        const context = canvasElement.getContext('2d', {alpha: false});
         const contextOffscreen = canvasOffscreenElement.getContext('2d');
 
         let drawOffScreen = true;
@@ -74,7 +81,7 @@ export function initScreenSharingCropping() {
                     const k = logo.width / logo.height;
                     const imW = Math.floor(logo.width + 50 * k);
                     const imH = Math.floor(logo.height + 50);
-                    contextOffscreen.fillStyle = 'rgba(0, 0, 0, 0.6)'
+                    contextOffscreen.fillStyle = 'rgba(0, 0, 0, 0.6)';
                     contextOffscreen.fillRect(
                         0, 0,
                         imW, imH
@@ -86,25 +93,26 @@ export function initScreenSharingCropping() {
             context.drawImage(canvasOffscreenElement, 0, 0);
 
             if (!videoElement.paused) {
-                if(window.requestAnimationFrame) {
+                if (window.requestAnimationFrame) {
                     window.requestAnimationFrame(draw);
-                } else if(window.webkitRequestAnimationFrame) {
+                } else if (window.webkitRequestAnimationFrame) {
                     window.webkitRequestAnimationFrame(draw);
                 } else {
                     setTimeout(draw, Math.floor(1000 / getFrameRate(videoSettings)));
                 }
             }
-        }
+        };
         videoElement.play().then(() => {
             draw();
         }).catch((err) => {
-            console.log('Error when play video', err)
+            console.log('Error when play video', err);
         });
-        console.log("Frame rate for captureStream: ", getFrameRate(videoTrack.getSettings()));
+        console.log('Frame rate for captureStream: ', getFrameRate(videoTrack.getSettings()));
         const capturedStream = canvasElement.captureStream(getFrameRate(videoTrack.getSettings()));
         const capturedTrack = capturedStream.getVideoTracks()[0];
 
         videoTrack.addEventListener('ended', (ev) => {
+            modifyDisplay.externalCancel();
             capturedTrack.enabled = false;
             capturedTrack.stop();
             videoElement.pause();
@@ -113,7 +121,7 @@ export function initScreenSharingCropping() {
             videoElement.remove();
             logo.remove();
             capturedStream.removeTrack(capturedTrack);
-            capturedTrack.dispatchEvent(new Event("ended", ev));
+            capturedTrack.dispatchEvent(new Event('ended', ev));
         });
         ms.addEventListener('removetrack', (ev: MediaStreamTrackEvent) => {
             if (ev.track === videoTrack) {
@@ -125,13 +133,19 @@ export function initScreenSharingCropping() {
 
         ms.getTracks().filter(t => t !== videoTrack).forEach(t => capturedStream.addTrack(t));
 
-        resolve(capturedStream)
+        modifyDisplay.modifyStream(videoElement)
+        .then(value => {
+            resolve(capturedStream);
+        }).catch(reason => {
+            capturedStream.getTracks().forEach(v => v.stop());
+            ms.getTracks().forEach(v => v.stop());
+        })
     });
 
     MediaDevices.prototype.getDisplayMedia = (c) => {
         return navigator.mediaDevices.getBackupDisplayMedia(c).then((s) => {
             return modifyStream(s, s.getVideoTracks()[0]).then((s2) => {
-                return s2
+                return s2;
             });
         }).catch(err => {
             console.log('Promise return error: ', err);
@@ -149,7 +163,7 @@ export function initScreenSharingCropping() {
                 return s;
             }
             return modifyStream(s, trackToModify).then((s2) => {
-                return s2
+                return s2;
             });
         }).catch(err => {
             console.log('Promise return error: ', err);

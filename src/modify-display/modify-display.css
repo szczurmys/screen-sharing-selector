@@ -1,0 +1,31 @@
+#screen-sharing-selector-main {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 99999999;
+    background-color: #FFFFFF;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+.screen-sharing-selector-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.screen-sharing-selector-actions {
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+#screen-sharing-selector-canvas-preview {
+    flex-grow: 1;
+}
+
+/*.screen-sharing-selector-canvas #screen-sharing-selector-canvas-preview {*/
+/*    width: 100%;*/
+/*    height: 100%;*/
+/*}*/

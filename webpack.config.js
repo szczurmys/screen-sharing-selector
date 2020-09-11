@@ -18,6 +18,16 @@ module.exports = {
                 loader: 'ts-loader',
                 exclude: /node_modules/,
             },
+            {
+                test: /\.(html)$/,
+                use: 'raw-loader',
+                exclude: /node_modules/,
+            },
+            {
+                test: /\.(css)$/,
+                use: ['raw-loader'],
+                exclude: /node_modules/,
+            },
         ]
     },
     resolve: {
