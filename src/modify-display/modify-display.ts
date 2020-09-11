@@ -81,12 +81,15 @@ export class ModifyDisplay {
         };
     }
 
-    public modifyStream(htmlVideoElement: HTMLVideoElement): Promise<void> {
+    public modifyStream(htmlVideoElement: HTMLVideoElement): Promise<{ cropRect: DOMRect, foregroundCanvas: HTMLCanvasElement }> {
         this.htmlVideoElement = htmlVideoElement;
         return new Promise((resolve, reject) => {
             document.getElementById('screen-sharing-selector-accept').onclick = () => {
                 this.hide();
-                resolve();
+                resolve({
+                    cropRect: this.lastCropRect,
+                    foregroundCanvas: this.offscreenCanvasElement
+                });
                 document.getElementById('screen-sharing-selector-accept').onclick = null;
                 this.htmlVideoElement = null;
             };

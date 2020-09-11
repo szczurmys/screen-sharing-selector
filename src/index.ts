@@ -1,4 +1,4 @@
-import { ModifyDisplay } from './modify-display/modify-display'
+import {ModifyDisplay} from './modify-display/modify-display';
 
 declare global {
     // noinspection JSUnusedGlobalSymbols
@@ -40,7 +40,7 @@ export function initScreenSharingCropping() {
     }
 
 
-    const modifyStream = (ms: MediaStream, videoTrack: MediaStreamTrack): Promise<MediaStream> => new Promise((resolve, _) => {
+    const modifyStream = (ms: MediaStream, videoTrack: MediaStreamTrack): Promise<MediaStream> => new Promise((resolve, reject) => {
 
         const videoElement = document.createElement('video');
         const newMediaStream = new MediaStream();
@@ -50,47 +50,26 @@ export function initScreenSharingCropping() {
         videoElement.srcObject = newMediaStream;
 
         const canvasElement = document.createElement('canvas');
-        const canvasOffscreenElement = document.createElement('canvas');
+        let canvasOffscreenElement: HTMLCanvasElement;
+        let cropRect = new DOMRect(0, 0, videoElement.width, videoElement.height);
 
 
         const context = canvasElement.getContext('2d', {alpha: false});
-        const contextOffscreen = canvasOffscreenElement.getContext('2d');
-
-        let drawOffScreen = true;
 
         const draw = () => {
-            const videoSettings = videoTrack.getSettings();
-            const videoWidth = videoSettings.width;
-            const videoHeight = videoSettings.height;
-            if (canvasElement.width !== videoWidth || canvasElement.height !== videoHeight) {
-                canvasElement.width = videoWidth;
-                canvasElement.height = videoHeight;
-                canvasOffscreenElement.width = videoWidth;
-                canvasOffscreenElement.height = videoHeight;
-                drawOffScreen = false;
-            }
-            if (videoElement.width !== videoWidth || videoElement.height !== videoHeight) {
-                videoElement.width = videoWidth;
-                videoElement.height = videoHeight;
-            }
+            canvasElement.width = cropRect.width;
+            canvasElement.height = cropRect.height;
+            videoElement.width = cropRect.width;
+            videoElement.height = cropRect.height;
 
-            context.drawImage(videoElement, 0, 0, videoWidth, videoHeight);
-
-            if (!drawOffScreen) {
-                if (logoLoaded && logo.complete) {
-                    const k = logo.width / logo.height;
-                    const imW = Math.floor(logo.width + 50 * k);
-                    const imH = Math.floor(logo.height + 50);
-                    contextOffscreen.fillStyle = 'rgba(0, 0, 0, 0.6)';
-                    contextOffscreen.fillRect(
-                        0, 0,
-                        imW, imH
-                    );
-                    contextOffscreen.drawImage(logo, 0, 0, imW, imH);
-                    drawOffScreen = true;
-                }
+            context.drawImage(videoElement,
+                cropRect.x, cropRect.y, cropRect.width, cropRect.height,
+                0, 0, cropRect.width, cropRect.height);
+            if (canvasOffscreenElement) {
+                context.drawImage(canvasOffscreenElement,
+                    cropRect.x, cropRect.y, cropRect.width, cropRect.height,
+                    0, 0, cropRect.width, cropRect.height);
             }
-            context.drawImage(canvasOffscreenElement, 0, 0);
 
             if (!videoElement.paused) {
                 if (window.requestAnimationFrame) {
@@ -98,7 +77,7 @@ export function initScreenSharingCropping() {
                 } else if (window.webkitRequestAnimationFrame) {
                     window.webkitRequestAnimationFrame(draw);
                 } else {
-                    setTimeout(draw, Math.floor(1000 / getFrameRate(videoSettings)));
+                    setTimeout(draw, Math.floor(1000 / getFrameRate(videoTrack.getSettings())));
                 }
             }
         };
@@ -135,11 +114,14 @@ export function initScreenSharingCropping() {
 
         modifyDisplay.modifyStream(videoElement)
         .then(value => {
+            canvasOffscreenElement = value.foregroundCanvas;
+            cropRect = value.cropRect;
             resolve(capturedStream);
         }).catch(reason => {
             capturedStream.getTracks().forEach(v => v.stop());
             ms.getTracks().forEach(v => v.stop());
-        })
+            reject(reason);
+        });
     });
 
     MediaDevices.prototype.getDisplayMedia = (c) => {
