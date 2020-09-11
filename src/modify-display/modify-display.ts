@@ -86,10 +86,41 @@ export class ModifyDisplay {
         return new Promise((resolve, reject) => {
             document.getElementById('screen-sharing-selector-accept').onclick = () => {
                 this.hide();
-                resolve({
-                    cropRect: this.lastCropRect,
-                    foregroundCanvas: this.offscreenCanvasElement
-                });
+                const logoCheckbox = document.getElementById('screen-sharing-selector-action-logo') as HTMLInputElement;
+                if (logoCheckbox.checked) {
+                    const logo = new Image();
+                    logo.crossOrigin = '';
+                    logo.onload = () => {
+                        const k = logo.width / logo.height;
+                        const imW = Math.floor(logo.width + 50 * k);
+                        const imH = Math.floor(logo.height + 50);
+                        this.offscreenContextElement.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                        this.offscreenContextElement.fillRect(
+                            this.lastCropRect.x, this.lastCropRect.y,
+                            imW, imH
+                        );
+                        this.offscreenContextElement.drawImage(logo, this.lastCropRect.x, this.lastCropRect.y, imW, imH);
+                        resolve({
+                            cropRect: this.lastCropRect,
+                            foregroundCanvas: this.offscreenCanvasElement
+                        });
+                    };
+                    logo.onerror = event => {
+                        console.log('Cannot load logo. Skip. Reason: ', event);
+                        resolve({
+                            cropRect: this.lastCropRect,
+                            foregroundCanvas: this.offscreenCanvasElement
+                        });
+                    };
+                    logo.src = 'https://blog.consdata.tech/assets/img/logo.png';
+                } else {
+                    resolve({
+                        cropRect: this.lastCropRect,
+                        foregroundCanvas: this.offscreenCanvasElement
+                    });
+                }
+
+
                 document.getElementById('screen-sharing-selector-accept').onclick = null;
                 this.htmlVideoElement = null;
             };

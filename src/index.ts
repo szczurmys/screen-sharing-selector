@@ -25,15 +25,6 @@ function getFrameRate(settings: MediaTrackSettings) {
 export function initScreenSharingCropping() {
     const modifyDisplay = new ModifyDisplay();
 
-
-    const logo = new Image();
-    logo.crossOrigin = '';
-    let logoLoaded = false;
-    logo.onload = () => {
-        logoLoaded = true;
-    };
-    logo.src = 'https://blog.consdata.tech/assets/img/logo.png';
-
     if (!MediaDevices.prototype.getBackupDisplayMedia) {
         MediaDevices.prototype.getBackupDisplayMedia = MediaDevices.prototype.getDisplayMedia;
     }
@@ -106,7 +97,7 @@ export function initScreenSharingCropping() {
             }
         })
 
-        videoTrack.addEventListener('ended', (ev) => {
+        videoTrack.addEventListener('ended', () => {
             console.log("ended videoTrack");
             modifyDisplay.externalCancel();
             capturedTrack.enabled = false;
@@ -115,7 +106,6 @@ export function initScreenSharingCropping() {
             videoElement.srcObject = null;
             canvasElement.remove();
             videoElement.remove();
-            logo.remove();
             capturedStream.removeTrack(capturedTrack);
         });
         ms.addEventListener('removetrack', (ev: MediaStreamTrackEvent) => {

@@ -5,15 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!--suppress HtmlUnknownTarget -->
     <script src="main.js"></script>
     <script>
         let videoElement;
         let mediaStream;
-        window.onload = ev => {
-            screenSharingCropping.initScreenSharingCropping()
+        window.onload = () => {
+            screenSharingCropping.initScreenSharingCropping();
             videoElement = document.getElementById('videoResult');
 
-            document.getElementById("getMedia").onclick = ev => {
+            document.getElementById("getMedia").onclick = () => {
                 navigator.mediaDevices.getDisplayMedia({video: true})
                     .then(function (s) {
                         mediaStream = s;
@@ -21,7 +22,7 @@
                     });
             }
 
-            document.getElementById("stopMedia").onclick = ev => {
+            document.getElementById("stopMedia").onclick = () => {
                 if (mediaStream) {
                     mediaStream.getTracks().forEach(value => {
                         value.stop();
