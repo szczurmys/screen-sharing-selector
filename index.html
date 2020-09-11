@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <title>ScreenSharingCroppingDemoApp</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="main.js"></script>
+    <script>
+        let videoElement;
+        let mediaStream;
+        window.onload = ev => {
+            screenSharingCropping.initScreenSharingCropping()
+            videoElement = document.getElementById('videoResult');
+
+            document.getElementById("getMedia").onclick = ev => {
+                navigator.mediaDevices.getDisplayMedia({video: true})
+                    .then(function (s) {
+                        mediaStream = s;
+                        videoElement.srcObject = s;
+                    });
+            }
+
+            document.getElementById("stopMedia").onclick = ev => {
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(value => {
+                        value.stop();
+                    })
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+
+</head>
+<body>
+<div>
+    <button id="getMedia">Get Display Media</button>
+    <button id="stopMedia">Stop Display Media</button>
+</div>
+<div>
+    <video autoplay
+           style="width: 100%; height: 100%; background-color: gray; object-fit: scale-down; object-position: center"
+           id="videoResult" controls></video>
+</div>
+</body>
+</html>

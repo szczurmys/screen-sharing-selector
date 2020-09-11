@@ -1,0 +1,45 @@
+{
+  "name": "screensharing-cropping",
+  "version": "0.0.1",
+  "description": "screensharing-cropping",
+  "private": true,
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "lint": "tslint --project '.'",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -Rf ./dist",
+    "build": "npm run clean && npm run lint && webpack",
+    "buildDev": "npm run clean && npm run lint && webpack --mode=development",
+    "start": "npm run build && webpack-dev-server",
+    "startDev": "npm run buildDev && webpack-dev-server --mode=development"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+TODO"
+  },
+  "keywords": [
+    "snake",
+    "3d",
+    "webgl",
+    "javascript",
+    "js"
+  ],
+  "author": "szczurmys",
+  "license": "",
+  "bugs": {
+    "url": "TODO/issues"
+  },
+  "homepage": "TODO#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "copy-webpack-plugin": "^5.1.1",
+    "ts-loader": "^6.2.1",
+    "tslint": "^6.0.0",
+    "typescript": "^3.8.2",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  }
+}
