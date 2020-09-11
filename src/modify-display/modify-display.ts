@@ -13,6 +13,9 @@ export class ModifyDisplay {
 
     private htmlVideoElement: HTMLVideoElement;
 
+    private rectStartPoint?: DOMPoint;
+    private rectEndPoint?: DOMPoint;
+
     constructor() {
         this.modifyStream = this.modifyStream.bind(this);
         this.draw = this.draw.bind(this);
@@ -30,6 +33,22 @@ export class ModifyDisplay {
 
         this.canvasPreviewElement = document.getElementById('screen-sharing-selector-canvas-preview') as HTMLCanvasElement;
         this.contextPreviewElement = this.canvasPreviewElement.getContext('2d');
+
+        this.canvasPreviewElement.onmousedown = ev => {
+            this.rectStartPoint = this.computePoint(new DOMPoint(ev.x, ev.y));
+            this.rectEndPoint = this.computePoint(new DOMPoint(ev.x, ev.y));
+        };
+
+        this.canvasPreviewElement.onmousemove = ev => {
+            if (this.rectStartPoint && this.rectEndPoint) {
+                this.rectEndPoint = this.computePoint(new DOMPoint(ev.x, ev.y));
+            }
+        };
+
+        this.canvasPreviewElement.onmouseup = ev => {
+            this.rectStartPoint = null;
+            this.rectEndPoint = null;
+        };
     }
 
     public modifyStream(htmlVideoElement: HTMLVideoElement): Promise<void> {
@@ -56,7 +75,6 @@ export class ModifyDisplay {
             this.offscreenCanvasElement.height = this.htmlVideoElement.height;
             this.offscreenContextElement = this.offscreenCanvasElement.getContext('2d');
 
-            console.log('DRAW');
             this.executeDraw();
         });
     }
@@ -66,17 +84,49 @@ export class ModifyDisplay {
             return;
         }
         const computedSize = this.computedSize();
-        if (this.canvasPreviewElement.width !== computedSize.width || this.canvasPreviewElement.height !== computedSize.height) {
-            this.canvasPreviewElement.width = computedSize.width;
-            this.canvasPreviewElement.height = computedSize.height;
-        }
+        this.canvasPreviewElement.width = computedSize.width;
+        this.canvasPreviewElement.height = computedSize.height;
 
         const videoWorkspace = this.computeVideoWorkspace();
 
         this.contextPreviewElement.drawImage(this.htmlVideoElement, videoWorkspace.x, videoWorkspace.y, videoWorkspace.width, videoWorkspace.height);
         this.contextPreviewElement.drawImage(this.offscreenCanvasElement, videoWorkspace.x, videoWorkspace.y, videoWorkspace.width, videoWorkspace.height);
 
+        if (this.rectStartPoint && this.rectEndPoint) {
+            console.log('DRAW RECT!');
+            const x = Math.min(this.rectStartPoint.x, this.rectEndPoint.x);
+            const y = Math.min(this.rectStartPoint.y, this.rectEndPoint.y);
+            const width = Math.max(this.rectStartPoint.x, this.rectEndPoint.x) - x;
+            const height = Math.max(this.rectStartPoint.y, this.rectEndPoint.y) - y;
+
+            this.contextPreviewElement.lineWidth = 10;
+            this.contextPreviewElement.strokeStyle = '#000000'
+            this.contextPreviewElement.strokeRect(x, y, width, height);
+        }
+
         this.executeDraw();
+    }
+
+    private computePoint(point: DOMPoint): DOMPoint {
+        const videoWorkspace = this.computeVideoWorkspace();
+        let newX = point.x;
+        let newY = point.y;
+
+        if(point.x < videoWorkspace.x) {
+            newX = videoWorkspace.x;
+        }
+        if(point.y < videoWorkspace.y) {
+            newY = videoWorkspace.y;
+        }
+
+        if(point.x > videoWorkspace.x + videoWorkspace.width) {
+            newX = videoWorkspace.x + videoWorkspace.width;
+        }
+        if(point.y > videoWorkspace.y + videoWorkspace.height) {
+            newY = videoWorkspace.y + videoWorkspace.height;
+        }
+
+        return new DOMPoint(newX, newY);
     }
 
     private computedSize(): { width: number, height: number } {
