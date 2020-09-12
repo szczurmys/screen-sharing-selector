@@ -1,9 +1,8 @@
-import modifyDisplayCss from './modify-display.css';
+import './modify-display.scss';
 import modifyDisplayHtml from './modify-display.html';
 
 export class ModifyDisplay {
     private readonly mainElement: HTMLDivElement;
-    private readonly styleElement: HTMLStyleElement;
 
     private canvasPreviewElement: HTMLCanvasElement;
     private contextPreviewElement: CanvasRenderingContext2D;
@@ -21,11 +20,6 @@ export class ModifyDisplay {
     constructor() {
         this.modifyStream = this.modifyStream.bind(this);
         this.draw = this.draw.bind(this);
-
-        this.styleElement = document.createElement('style');
-        this.styleElement.innerHTML = modifyDisplayCss;
-
-        document.head.append(this.styleElement);
 
         this.mainElement = document.createElement('div');
         this.mainElement.setAttribute('id', 'screen-sharing-selector-main');
@@ -47,11 +41,19 @@ export class ModifyDisplay {
             }
         };
 
+        const rectangleRadio = document.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
+        const cropRadio = document.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
+
+        rectangleRadio.onchange = () => {
+            this.setProperCursor();
+        };
+        cropRadio.onchange = () => {
+            this.setProperCursor();
+        };
+
         this.canvasPreviewElement.onmouseup = ev => {
             this.rectEndPoint = this.computePoint(new DOMPoint(ev.x, ev.y));
 
-            const rectangleRadio = document.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
-            const cropRadio = document.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
 
             const videoWorkspace = this.computeVideoWorkspace(this.lastCropRect.width, this.lastCropRect.height);
 
@@ -83,6 +85,7 @@ export class ModifyDisplay {
 
     public modifyStream(htmlVideoElement: HTMLVideoElement): Promise<{ cropRect: DOMRect, foregroundCanvas: HTMLCanvasElement }> {
         this.htmlVideoElement = htmlVideoElement;
+        this.setProperCursor();
         return new Promise((resolve, reject) => {
             document.getElementById('screen-sharing-selector-accept').onclick = () => {
                 this.hide();
@@ -144,6 +147,17 @@ export class ModifyDisplay {
         });
     }
 
+    private setProperCursor(): void {
+        const rectangleRadio = document.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
+        const cropRadio = document.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
+        if (rectangleRadio.checked) {
+            this.canvasPreviewElement.style.cursor = 'crosshair';
+        }
+        if (cropRadio.checked) {
+            this.canvasPreviewElement.style.cursor = 'nwse-resize';
+        }
+    }
+
     private draw(): void {
         if (!this.htmlVideoElement) {
             return;
@@ -155,6 +169,10 @@ export class ModifyDisplay {
         const cropRect = this.lastCropRect;
 
         const croppedWorkspace = this.computeVideoWorkspace(cropRect.width, cropRect.height);
+
+        this.contextPreviewElement.lineWidth = 10;
+        this.contextPreviewElement.strokeStyle = '#212121';
+        this.contextPreviewElement.strokeRect(croppedWorkspace.x, croppedWorkspace.y, croppedWorkspace.width, croppedWorkspace.height);
 
         this.contextPreviewElement.drawImage(this.htmlVideoElement,
             cropRect.x, cropRect.y, cropRect.width, cropRect.height,
@@ -214,8 +232,8 @@ export class ModifyDisplay {
 
     private computeVideoWorkspace(srcWidth: number, srcHeight: number): { x: number, y: number, width: number, height: number, scale: number } {
         const computedSize = this.computedSize();
-        const offsetX = 10;
-        const offsetY = 10;
+        const offsetX = 50;
+        const offsetY = 50;
         const availableWidth = computedSize.width - offsetX * 2;
         const availableHeight = computedSize.height - offsetY * 2;
 

@@ -1,0 +1,58 @@
+//@import "~bootstrap";
+
+#screen-sharing-selector-main {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 99999999;
+    background-color: #FFFFFF;
+    width: 100%;
+    height: 100%;
+    display: none;
+
+    font-size: 16px;
+
+    .screen-sharing-selector-wrapper {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+
+        .screen-sharing-selector-actions {
+            flex-grow: 0;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin: 5px 0;
+
+            > * {
+                padding-left: 15px;
+            }
+
+            button {
+                margin: 0 5px;
+                background-color: #555555;
+                border: none;
+                color: white;
+                padding: 10px 10px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+            }
+
+            #screen-sharing-selector-accept {
+                background-color: #4CAF50;
+            }
+
+            #screen-sharing-selector-cancel {
+                background-color: #f44336;
+            }
+        }
+
+        #screen-sharing-selector-canvas-preview {
+            flex-grow: 1;
+            background-color: #757575;
+        }
+    }
+}
