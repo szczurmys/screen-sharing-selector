@@ -27,20 +27,6 @@ export class ModifyDisplay {
 
         document.body.append(this.mainElement);
 
-        this.canvasPreviewElement = document.getElementById('screen-sharing-selector-canvas-preview') as HTMLCanvasElement;
-        this.contextPreviewElement = this.canvasPreviewElement.getContext('2d');
-
-        this.canvasPreviewElement.onmousedown = ev => {
-            this.rectStartPoint = this.computePoint(new DOMPoint(ev.x, ev.y));
-            this.rectEndPoint = this.computePoint(new DOMPoint(ev.x, ev.y));
-        };
-
-        this.canvasPreviewElement.onmousemove = ev => {
-            if (this.rectStartPoint && this.rectEndPoint) {
-                this.rectEndPoint = this.computePoint(new DOMPoint(ev.x, ev.y));
-            }
-        };
-
         const rectangleRadio = document.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
         const cropRadio = document.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
 
@@ -51,35 +37,67 @@ export class ModifyDisplay {
             this.setProperCursor();
         };
 
+        this.canvasPreviewElement = document.getElementById('screen-sharing-selector-canvas-preview') as HTMLCanvasElement;
+        this.contextPreviewElement = this.canvasPreviewElement.getContext('2d');
+
+        this.canvasPreviewElement.onmousedown = ev => {
+            if (this.rectStartPoint && this.rectEndPoint) {
+                this.canvasPreviewElement.onmouseup(ev);
+                return;
+            }
+            this.setProperCursor(true);
+            const clientRect = this.canvasPreviewElement.getBoundingClientRect();
+            const evx = ev.x - clientRect.x;
+            const evy = ev.y - clientRect.y;
+
+            this.rectStartPoint = this.computePoint(new DOMPoint(evx, evy));
+            this.rectEndPoint = this.computePoint(new DOMPoint(evx, evy));
+        };
+
+        this.canvasPreviewElement.onmousemove = ev => {
+            if (this.rectStartPoint && this.rectEndPoint) {
+                const clientRect = this.canvasPreviewElement.getBoundingClientRect();
+                const evx = ev.x - clientRect.x;
+                const evy = ev.y - clientRect.y;
+                this.rectEndPoint = this.computePoint(new DOMPoint(evx, evy));
+            }
+        };
+
         this.canvasPreviewElement.onmouseup = ev => {
-            this.rectEndPoint = this.computePoint(new DOMPoint(ev.x, ev.y));
+            this.setProperCursor(true);
+            if (this.rectStartPoint && this.rectEndPoint) {
+                const clientRect = this.canvasPreviewElement.getBoundingClientRect();
+                const evx = ev.x - clientRect.x;
+                const evy = ev.y - clientRect.y;
+                this.rectEndPoint = this.computePoint(new DOMPoint(evx, evy));
 
 
-            const videoWorkspace = this.computeVideoWorkspace(this.lastCropRect.width, this.lastCropRect.height);
+                const videoWorkspace = this.computeVideoWorkspace(this.lastCropRect.width, this.lastCropRect.height);
 
-            const rectSize = ModifyDisplay.convertTwoPointsToRect(this.rectStartPoint, this.rectEndPoint);
+                const rectSize = ModifyDisplay.convertTwoPointsToRect(this.rectStartPoint, this.rectEndPoint);
 
-            const x = rectSize.x - videoWorkspace.x;
-            const y = rectSize.y - videoWorkspace.y;
+                const x = rectSize.x - videoWorkspace.x;
+                const y = rectSize.y - videoWorkspace.y;
 
-            if (rectangleRadio.checked) {
-                this.offscreenContextElement.fillStyle = '#000000';
-                this.offscreenContextElement.fillRect(
-                    x / videoWorkspace.scale + this.lastCropRect.x,
-                    y / videoWorkspace.scale + this.lastCropRect.y,
-                    rectSize.width / videoWorkspace.scale,
-                    rectSize.height / videoWorkspace.scale);
+                if (rectangleRadio.checked) {
+                    this.offscreenContextElement.fillStyle = '#000000';
+                    this.offscreenContextElement.fillRect(
+                        x / videoWorkspace.scale + this.lastCropRect.x,
+                        y / videoWorkspace.scale + this.lastCropRect.y,
+                        rectSize.width / videoWorkspace.scale,
+                        rectSize.height / videoWorkspace.scale);
+                }
+                if (cropRadio.checked) {
+                    this.lastCropRect = new DOMRect(
+                        x / videoWorkspace.scale + this.lastCropRect.x,
+                        y / videoWorkspace.scale + this.lastCropRect.y,
+                        rectSize.width / videoWorkspace.scale,
+                        rectSize.height / videoWorkspace.scale);
+                }
+
+                this.rectStartPoint = null;
+                this.rectEndPoint = null;
             }
-            if (cropRadio.checked) {
-                this.lastCropRect = new DOMRect(
-                    x / videoWorkspace.scale + this.lastCropRect.x,
-                    y / videoWorkspace.scale + this.lastCropRect.y,
-                    rectSize.width / videoWorkspace.scale,
-                    rectSize.height / videoWorkspace.scale);
-            }
-
-            this.rectStartPoint = null;
-            this.rectEndPoint = null;
         };
     }
 
@@ -147,14 +165,18 @@ export class ModifyDisplay {
         });
     }
 
-    private setProperCursor(): void {
+    private setProperCursor(mouseDown: boolean = false): void {
         const rectangleRadio = document.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
         const cropRadio = document.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
         if (rectangleRadio.checked) {
             this.canvasPreviewElement.style.cursor = 'crosshair';
         }
         if (cropRadio.checked) {
-            this.canvasPreviewElement.style.cursor = 'nwse-resize';
+            if (mouseDown) {
+                this.canvasPreviewElement.style.cursor = 'nwse-resize';
+            } else {
+                this.canvasPreviewElement.style.cursor = 'cross';
+            }
         }
     }
 
