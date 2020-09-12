@@ -10,24 +10,46 @@
     <script>
         let videoElement;
         let mediaStream;
+        let getMediaButton;
+        let stopMediaButton;
+
+        function enableGetMedia(enable) {
+            if (enable) {
+                getMediaButton.removeAttribute("disabled");
+                stopMediaButton.setAttribute("disabled", "disabled");
+            } else {
+                getMediaButton.setAttribute("disabled", "disabled");
+                stopMediaButton.removeAttribute("disabled");
+            }
+        }
+
         window.onload = () => {
             screenSharingCropping.initScreenSharingCropping();
             videoElement = document.getElementById('videoResult');
+            getMediaButton = document.getElementById("getMedia");
+            stopMediaButton = document.getElementById("stopMedia");
 
-            document.getElementById("getMedia").onclick = () => {
+            getMediaButton.onclick = () => {
                 navigator.mediaDevices.getDisplayMedia({video: true})
                     .then(function (s) {
                         mediaStream = s;
+                        mediaStream.getVideoTracks()[0].onended = () => {
+                            videoElement.srcObject = null;
+                            enableGetMedia(true);
+                        }
                         videoElement.srcObject = s;
+                        enableGetMedia(false);
                     });
             }
 
-            document.getElementById("stopMedia").onclick = () => {
+            stopMediaButton.onclick = () => {
                 if (mediaStream) {
                     mediaStream.getTracks().forEach(value => {
                         value.stop();
                     })
+                    videoElement.srcObject = null;
                 }
+                enableGetMedia(true);
             }
         }
     </script>
@@ -63,20 +85,8 @@
             font-size: 16px;
         }
 
-        .videoContainer {
-            flex-grow: 1;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
         #videoResult {
-            width: 80%;
-            height: 80%;
-            max-width: 80%;
-            max-height: 80%;
+            flex-grow: 1 !important;
             background-color: gray;
             object-fit: scale-down;
             object-position: center;
@@ -88,11 +98,9 @@
 <div class="main">
     <div class="buttons">
         <button id="getMedia">Get Display Media</button>
-        <button id="stopMedia">Stop Display Media</button>
+        <button id="stopMedia" disabled="disabled">Stop Display Media</button>
     </div>
-    <div class="videoContainer">
     <video autoplay id="videoResult"></video>
-    </div>
 </div>
 </body>
 </html>
