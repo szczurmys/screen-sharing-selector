@@ -1,8 +1,9 @@
 <div class="screen-sharing-selector-wrapper">
     <div class="screen-sharing-selector-actions">
-        <button class="mdc-button__ripple" id="screen-sharing-selector-accept">Accept</button>
-        <button class="mdc-button__ripple" id="screen-sharing-selector-cancel">Cancel</button>
-        <div>
+        <button id="screen-sharing-selector-accept">Accept</button>
+        <button id="screen-sharing-selector-cancel">Cancel</button>
+        <div class="screen-sharing-selector-action">
+            <button class="screen-sharing-selector-action-revert" id="screen-sharing-selector-action-revert-crop">&#x21B6;</button>
             <label>
                 <input type="radio"
                        id="screen-sharing-selector-action-crop"
@@ -11,22 +12,25 @@
                 Crop screen
             </label>
         </div>
-        <div>
+        <div class="screen-sharing-selector-action">
+            <button class="screen-sharing-selector-action-revert" id="screen-sharing-selector-action-revert-black-rectangle">&#x21B6;</button>
             <label>
                 <input type="radio"
                        id="screen-sharing-selector-action-black-rectangle"
-                       name="screen-sharing-selector-action"
-                       checked="checked">
+                       name="screen-sharing-selector-action">
                 Draw black rectangle
             </label>
         </div>
-        <div>
+        <div class="screen-sharing-selector-action">
             <label>
                 <input type="checkbox"
                        id="screen-sharing-selector-action-logo"
                        checked="checked">
                 Draw logo in top left corner
             </label>
+        </div>
+        <div class="screen-sharing-selector-action">
+            <button class="screen-sharing-selector-action-revert" id="screen-sharing-selector-action-reset">&#x27F2; Reset</button>
         </div>
     </div>
     <canvas id="screen-sharing-selector-canvas-preview"></canvas>

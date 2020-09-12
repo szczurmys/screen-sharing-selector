@@ -15,7 +15,8 @@ export class ModifyDisplay {
     private rectStartPoint?: DOMPoint;
     private rectEndPoint?: DOMPoint;
 
-    private lastCropRect: DOMRect;
+    private cropRects: DOMRect[] = [];
+    private blackRects: DOMRect[] = [];
 
     constructor() {
         this.modifyStream = this.modifyStream.bind(this);
@@ -35,6 +36,21 @@ export class ModifyDisplay {
         };
         cropRadio.onchange = () => {
             this.setProperCursor();
+        };
+
+        document.getElementById('screen-sharing-selector-action-revert-crop').onclick = () => {
+            this.removeLastCropRect();
+        };
+
+        document.getElementById('screen-sharing-selector-action-revert-black-rectangle').onclick = () => {
+            this.removeLastBlackRectAndRedraw();
+        };
+
+        document.getElementById('screen-sharing-selector-action-reset').onclick = () => {
+            this.blackRects = [];
+            this.cropRects = [];
+            this.removeLastCropRect();
+            this.removeLastBlackRectAndRedraw();
         };
 
         this.canvasPreviewElement = document.getElementById('screen-sharing-selector-canvas-preview') as HTMLCanvasElement;
@@ -64,7 +80,7 @@ export class ModifyDisplay {
         };
 
         this.canvasPreviewElement.onmouseup = ev => {
-            this.setProperCursor(true);
+            this.setProperCursor(false);
             if (this.rectStartPoint && this.rectEndPoint) {
                 const clientRect = this.canvasPreviewElement.getBoundingClientRect();
                 const evx = ev.x - clientRect.x;
@@ -72,7 +88,7 @@ export class ModifyDisplay {
                 this.rectEndPoint = this.computePoint(new DOMPoint(evx, evy));
 
 
-                const videoWorkspace = this.computeVideoWorkspace(this.lastCropRect.width, this.lastCropRect.height);
+                const videoWorkspace = this.computeVideoWorkspace(this.getLastCropRect().width, this.getLastCropRect().height);
 
                 const rectSize = ModifyDisplay.convertTwoPointsToRect(this.rectStartPoint, this.rectEndPoint);
 
@@ -82,17 +98,22 @@ export class ModifyDisplay {
                 if (rectangleRadio.checked) {
                     this.offscreenContextElement.fillStyle = '#000000';
                     this.offscreenContextElement.fillRect(
-                        x / videoWorkspace.scale + this.lastCropRect.x,
-                        y / videoWorkspace.scale + this.lastCropRect.y,
+                        x / videoWorkspace.scale + this.getLastCropRect().x,
+                        y / videoWorkspace.scale + this.getLastCropRect().y,
                         rectSize.width / videoWorkspace.scale,
                         rectSize.height / videoWorkspace.scale);
+                    this.blackRects.push(new DOMRect(
+                        x / videoWorkspace.scale + this.getLastCropRect().x,
+                        y / videoWorkspace.scale + this.getLastCropRect().y,
+                        rectSize.width / videoWorkspace.scale,
+                        rectSize.height / videoWorkspace.scale));
                 }
                 if (cropRadio.checked) {
-                    this.lastCropRect = new DOMRect(
-                        x / videoWorkspace.scale + this.lastCropRect.x,
-                        y / videoWorkspace.scale + this.lastCropRect.y,
+                    this.cropRects.push(new DOMRect(
+                        x / videoWorkspace.scale + this.getLastCropRect().x,
+                        y / videoWorkspace.scale + this.getLastCropRect().y,
                         rectSize.width / videoWorkspace.scale,
-                        rectSize.height / videoWorkspace.scale);
+                        rectSize.height / videoWorkspace.scale));
                 }
 
                 this.rectStartPoint = null;
@@ -103,6 +124,7 @@ export class ModifyDisplay {
 
     public modifyStream(htmlVideoElement: HTMLVideoElement): Promise<{ cropRect: DOMRect, foregroundCanvas: HTMLCanvasElement }> {
         this.htmlVideoElement = htmlVideoElement;
+        this.cropRects = [];
         this.setProperCursor();
         return new Promise((resolve, reject) => {
             document.getElementById('screen-sharing-selector-accept').onclick = () => {
@@ -117,26 +139,26 @@ export class ModifyDisplay {
                         const imH = Math.floor(logo.height + 50);
                         this.offscreenContextElement.fillStyle = 'rgba(0, 0, 0, 0.6)';
                         this.offscreenContextElement.fillRect(
-                            this.lastCropRect.x, this.lastCropRect.y,
+                            this.getLastCropRect().x, this.getLastCropRect().y,
                             imW, imH
                         );
-                        this.offscreenContextElement.drawImage(logo, this.lastCropRect.x, this.lastCropRect.y, imW, imH);
+                        this.offscreenContextElement.drawImage(logo, this.getLastCropRect().x, this.getLastCropRect().y, imW, imH);
                         resolve({
-                            cropRect: this.lastCropRect,
+                            cropRect: this.getLastCropRect(),
                             foregroundCanvas: this.offscreenCanvasElement
                         });
                     };
                     logo.onerror = event => {
                         console.log('Cannot load logo. Skip. Reason: ', event);
                         resolve({
-                            cropRect: this.lastCropRect,
+                            cropRect: this.getLastCropRect(),
                             foregroundCanvas: this.offscreenCanvasElement
                         });
                     };
                     logo.src = 'https://blog.consdata.tech/assets/img/logo.png';
                 } else {
                     resolve({
-                        cropRect: this.lastCropRect,
+                        cropRect: this.getLastCropRect(),
                         foregroundCanvas: this.offscreenCanvasElement
                     });
                 }
@@ -159,7 +181,6 @@ export class ModifyDisplay {
             this.offscreenCanvasElement.width = this.htmlVideoElement.width;
             this.offscreenCanvasElement.height = this.htmlVideoElement.height;
             this.offscreenContextElement = this.offscreenCanvasElement.getContext('2d');
-            this.lastCropRect = new DOMRect(0, 0, this.htmlVideoElement.width, this.htmlVideoElement.height);
 
             this.executeDraw();
         });
@@ -172,10 +193,10 @@ export class ModifyDisplay {
             this.canvasPreviewElement.style.cursor = 'crosshair';
         }
         if (cropRadio.checked) {
-            if (mouseDown) {
+            if (mouseDown === true) {
                 this.canvasPreviewElement.style.cursor = 'nwse-resize';
             } else {
-                this.canvasPreviewElement.style.cursor = 'cross';
+                this.canvasPreviewElement.style.cursor = 'crosshair';
             }
         }
     }
@@ -188,7 +209,7 @@ export class ModifyDisplay {
         this.canvasPreviewElement.width = computedSize.width;
         this.canvasPreviewElement.height = computedSize.height;
 
-        const cropRect = this.lastCropRect;
+        const cropRect = this.getLastCropRect();
 
         const croppedWorkspace = this.computeVideoWorkspace(cropRect.width, cropRect.height);
 
@@ -215,7 +236,7 @@ export class ModifyDisplay {
     }
 
     private computePoint(point: DOMPoint): DOMPoint {
-        const videoWorkspace = this.computeVideoWorkspace(this.lastCropRect.width, this.lastCropRect.height);
+        const videoWorkspace = this.computeVideoWorkspace(this.getLastCropRect().width, this.getLastCropRect().height);
         let newX = point.x;
         let newY = point.y;
 
@@ -234,6 +255,26 @@ export class ModifyDisplay {
         }
 
         return new DOMPoint(newX, newY);
+    }
+
+    private getLastCropRect(): DOMRect {
+        if (this.cropRects.length === 0) {
+            return new DOMRect(0, 0, this.htmlVideoElement.width, this.htmlVideoElement.height);
+        }
+        return this.cropRects[this.cropRects.length - 1];
+    }
+
+    private removeLastCropRect(): DOMRect {
+        return this.cropRects.pop();
+    }
+
+    private removeLastBlackRectAndRedraw(): void {
+        this.blackRects.pop();
+        this.offscreenContextElement.clearRect(0, 0, this.offscreenCanvasElement.width, this.offscreenCanvasElement.height);
+        this.blackRects.forEach(value => {
+            this.offscreenContextElement.fillStyle = '#000000';
+            this.offscreenContextElement.fillRect(value.x, value.y, value.width, value.height);
+        });
     }
 
     private computedSize(): { width: number, height: number } {
