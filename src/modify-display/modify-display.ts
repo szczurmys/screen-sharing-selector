@@ -1,8 +1,12 @@
-import './modify-display.scss';
+import '@webcomponents/webcomponentsjs/webcomponents-bundle.js'
+import '@webcomponents/webcomponentsjs/custom-elements-es5-adapter.js'
+import 'elm-rte-toolkit';
+
+import modifyDisplayStyle from './modify-display.scss';
 import modifyDisplayHtml from './modify-display.html';
 
-export class ModifyDisplay {
-    private readonly mainElement: HTMLDivElement;
+export class ModifyDisplay extends HTMLElement {
+    private readonly shadowDocument: ShadowRoot;
 
     private canvasPreviewElement: HTMLCanvasElement;
     private contextPreviewElement: CanvasRenderingContext2D;
@@ -18,18 +22,20 @@ export class ModifyDisplay {
     private cropRects: DOMRect[] = [];
     private blackRects: DOMRect[] = [];
 
+
     constructor() {
+        super();
         this.modifyStream = this.modifyStream.bind(this);
         this.draw = this.draw.bind(this);
 
-        this.mainElement = document.createElement('div');
-        this.mainElement.setAttribute('id', 'screen-sharing-selector-main');
-        this.mainElement.innerHTML = modifyDisplayHtml;
+        this.shadowDocument = this.attachShadow({mode: "open"});
+        const style = document.createElement("style");
+        style.innerHTML = modifyDisplayStyle;
+        this.shadowDocument.appendChild(style);
+        this.shadowDocument.innerHTML += modifyDisplayHtml;
 
-        document.body.append(this.mainElement);
-
-        const rectangleRadio = document.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
-        const cropRadio = document.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
+        const rectangleRadio = this.shadowDocument.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
+        const cropRadio = this.shadowDocument.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
 
         rectangleRadio.onchange = () => {
             this.setProperCursor();
@@ -38,22 +44,22 @@ export class ModifyDisplay {
             this.setProperCursor();
         };
 
-        document.getElementById('screen-sharing-selector-action-revert-crop').onclick = () => {
+        this.shadowDocument.getElementById('screen-sharing-selector-action-revert-crop').onclick = () => {
             this.removeLastCropRect();
         };
 
-        document.getElementById('screen-sharing-selector-action-revert-black-rectangle').onclick = () => {
+        this.shadowDocument.getElementById('screen-sharing-selector-action-revert-black-rectangle').onclick = () => {
             this.removeLastBlackRectAndRedraw();
         };
 
-        document.getElementById('screen-sharing-selector-action-reset').onclick = () => {
+        this.shadowDocument.getElementById('screen-sharing-selector-action-reset').onclick = () => {
             this.blackRects = [];
             this.cropRects = [];
             this.removeLastCropRect();
             this.removeLastBlackRectAndRedraw();
         };
 
-        this.canvasPreviewElement = document.getElementById('screen-sharing-selector-canvas-preview') as HTMLCanvasElement;
+        this.canvasPreviewElement = this.shadowDocument.getElementById('screen-sharing-selector-canvas-preview') as HTMLCanvasElement;
         this.contextPreviewElement = this.canvasPreviewElement.getContext('2d');
 
         this.canvasPreviewElement.onmousedown = ev => {
@@ -127,9 +133,9 @@ export class ModifyDisplay {
         this.cropRects = [];
         this.setProperCursor();
         return new Promise((resolve, reject) => {
-            document.getElementById('screen-sharing-selector-accept').onclick = () => {
+            this.shadowDocument.getElementById('screen-sharing-selector-accept').onclick = () => {
                 this.hide();
-                const logoCheckbox = document.getElementById('screen-sharing-selector-action-logo') as HTMLInputElement;
+                const logoCheckbox = this.shadowDocument.getElementById('screen-sharing-selector-action-logo') as HTMLInputElement;
                 if (logoCheckbox.checked) {
                     const logo = new Image();
                     logo.crossOrigin = '';
@@ -164,14 +170,14 @@ export class ModifyDisplay {
                 }
 
 
-                document.getElementById('screen-sharing-selector-accept').onclick = null;
+                this.shadowDocument.getElementById('screen-sharing-selector-accept').onclick = null;
                 this.htmlVideoElement = null;
             };
 
-            document.getElementById('screen-sharing-selector-cancel').onclick = () => {
+            this.shadowDocument.getElementById('screen-sharing-selector-cancel').onclick = () => {
                 this.hide();
                 reject('Canceled by user.');
-                document.getElementById('screen-sharing-selector-cancel').onclick = null;
+                this.shadowDocument.getElementById('screen-sharing-selector-cancel').onclick = null;
                 this.htmlVideoElement = null;
             };
             this.show();
@@ -187,8 +193,8 @@ export class ModifyDisplay {
     }
 
     private setProperCursor(mouseDown: boolean = false): void {
-        const rectangleRadio = document.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
-        const cropRadio = document.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
+        const rectangleRadio = this.shadowDocument.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
+        const cropRadio = this.shadowDocument.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
         if (rectangleRadio.checked) {
             this.canvasPreviewElement.style.cursor = 'crosshair';
         }
@@ -328,14 +334,14 @@ export class ModifyDisplay {
     }
 
     public externalCancel() {
-        document.getElementById('screen-sharing-selector-cancel').click();
+        this.shadowDocument.getElementById('screen-sharing-selector-cancel').click();
     }
 
     private show(): void {
-        this.mainElement.style.display = 'block';
+        this.style.display = 'block';
     }
 
     private hide(): void {
-        this.mainElement.style.display = 'none';
+        this.style.display = 'none';
     }
 }

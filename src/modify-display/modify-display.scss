@@ -1,6 +1,7 @@
 //@import "~bootstrap";
 
-#screen-sharing-selector-main {
+:host {
+    all: initial; /* 1st rule so subsequent properties are reset. */
     position: fixed;
     top: 0;
     left: 0;

@@ -23,7 +23,10 @@ function getFrameRate(settings: MediaTrackSettings) {
 
 // noinspection JSUnusedGlobalSymbols
 export function initScreenSharingCropping() {
+    window.customElements.define('modify-display', ModifyDisplay);
     const modifyDisplay = new ModifyDisplay();
+
+    document.body.append(modifyDisplay);
 
     if (!MediaDevices.prototype.getBackupDisplayMedia) {
         MediaDevices.prototype.getBackupDisplayMedia = MediaDevices.prototype.getDisplayMedia;
