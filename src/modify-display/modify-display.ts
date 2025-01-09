@@ -153,6 +153,8 @@ export class ModifyDisplay extends HTMLElement {
                             cropRect: this.getLastCropRect(),
                             foregroundCanvas: this.offscreenCanvasElement
                         });
+                        this.shadowDocument.getElementById('screen-sharing-selector-accept').onclick = null;
+                        this.htmlVideoElement = null;
                     };
                     logo.onerror = event => {
                         console.log('Cannot load logo. Skip. Reason: ', event);
@@ -160,18 +162,18 @@ export class ModifyDisplay extends HTMLElement {
                             cropRect: this.getLastCropRect(),
                             foregroundCanvas: this.offscreenCanvasElement
                         });
+                        this.shadowDocument.getElementById('screen-sharing-selector-accept').onclick = null;
+                        this.htmlVideoElement = null;
                     };
-                    logo.src = 'https://blog.consdata.tech/assets/img/logo.png';
+                    logo.src = '/assets/logo.png';
                 } else {
                     resolve({
                         cropRect: this.getLastCropRect(),
                         foregroundCanvas: this.offscreenCanvasElement
                     });
+                    this.shadowDocument.getElementById('screen-sharing-selector-accept').onclick = null;
+                    this.htmlVideoElement = null;
                 }
-
-
-                this.shadowDocument.getElementById('screen-sharing-selector-accept').onclick = null;
-                this.htmlVideoElement = null;
             };
 
             this.shadowDocument.getElementById('screen-sharing-selector-cancel').onclick = () => {
@@ -182,7 +184,7 @@ export class ModifyDisplay extends HTMLElement {
             };
             this.show();
 
-
+            
             this.offscreenCanvasElement = document.createElement('canvas');
             this.offscreenCanvasElement.width = this.htmlVideoElement.width;
             this.offscreenCanvasElement.height = this.htmlVideoElement.height;
@@ -271,7 +273,10 @@ export class ModifyDisplay extends HTMLElement {
     }
 
     private removeLastCropRect(): DOMRect {
-        return this.cropRects.pop();
+        if(this.cropRects.length > 1) {
+            return this.cropRects.pop();
+        }
+        return this.cropRects[0]
     }
 
     private removeLastBlackRectAndRedraw(): void {

@@ -17,38 +17,37 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+TODO"
+    "url": "git@github.com:szczurmys/screen-sharing-selector.git"
   },
   "keywords": [
-    "snake",
-    "3d",
-    "webgl",
-    "javascript",
-    "js"
+    "screensharing",
+    "cropping",
+    "selector"
   ],
   "author": "szczurmys",
-  "license": "",
+  "license": "Apache-2.0",
   "bugs": {
-    "url": "TODO/issues"
+    "url": "https://github.com/szczurmys/screen-sharing-selector/issues"
   },
   "homepage": "TODO#readme",
   "devDependencies": {
-    "copy-webpack-plugin": "^5.1.1",
-    "css-loader": "^4.3.0",
-    "glob": "^7.1.6",
-    "raw-loader": "^4.0.1",
-    "sass": "^1.26.10",
-    "sass-loader": "^10.0.2",
-    "style-loader": "^1.2.1",
-    "ts-loader": "^6.2.1",
-    "tslint": "^6.0.0",
-    "typescript": "^3.8.2",
-    "webpack": "^4.41.6",
-    "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "^3.10.3"
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^7.1.2",
+    "glob": "^11.0.0",
+    "raw-loader": "^4.0.2",
+    "sass": "^1.83.1",
+    "sass-loader": "^16.0.4",
+    "source-map-loader": "^5.0.0",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.1",
+    "tslint": "^6.1.3",
+    "typescript": "^5.7.3",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0"
   },
   "dependencies": {
-    "@webcomponents/webcomponentsjs": "^2.5.0",
+    "@webcomponents/webcomponentsjs": "^2.8.0",
     "elm-rte-toolkit": "^1.0.5"
   }
 }

@@ -15,6 +15,10 @@ declare global {
     interface MediaStreamTrack {
         baseStop(): void;
     }
+
+    interface Window {
+        webkitRequestAnimationFrame(callback: FrameRequestCallback): number
+    }
 }
 
 function getFrameRate(settings: MediaTrackSettings) {

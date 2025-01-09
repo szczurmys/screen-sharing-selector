@@ -1,11 +1,12 @@
 const path = require('path');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
     mode: 'production',
     entry: [
         './src/index.ts'
     ],
+    devtool: 'inline-source-map',
     output: {
         filename: 'main.js',
         library: "screenSharingCropping",
@@ -38,12 +39,16 @@ module.exports = {
         extensions: [".tsx", ".ts", ".js"]
     },
     devServer: {
-        contentBase: './dist',
+        static: {
+            directory: path.join(__dirname, "./dist")
+        }
     },
     plugins: [
-        new CopyWebpackPlugin([
-            { from: 'assets', to: 'assets' },
-            { from: 'index.html', to: 'index.html' }
-        ]),
+        new CopyPlugin({
+            patterns: [
+                { from: "assets", to: "assets" },
+                { from: "index.html", to: "index.html" },
+            ],
+        }),
     ]
 };
