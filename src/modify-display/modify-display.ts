@@ -129,6 +129,9 @@ export class ModifyDisplay extends HTMLElement {
     }
 
     public modifyStream(htmlVideoElement: HTMLVideoElement): Promise<{ cropRect: DOMRect, foregroundCanvas: HTMLCanvasElement }> {
+        if (this.htmlVideoElement) {
+            throw new Error("Another HTMLVideoElement is being handled. Wait until the previous job is finished, or close it manually.")
+        }
         this.htmlVideoElement = htmlVideoElement;
         this.cropRects = [];
         this.setProperCursor();
@@ -184,7 +187,7 @@ export class ModifyDisplay extends HTMLElement {
             };
             this.show();
 
-            
+
             this.offscreenCanvasElement = document.createElement('canvas');
             this.offscreenCanvasElement.width = this.htmlVideoElement.width;
             this.offscreenCanvasElement.height = this.htmlVideoElement.height;
@@ -194,7 +197,7 @@ export class ModifyDisplay extends HTMLElement {
         });
     }
 
-    private setProperCursor(mouseDown: boolean = false): void {
+    private setProperCursor(mouseDown = false): void {
         const rectangleRadio = this.shadowDocument.getElementById('screen-sharing-selector-action-black-rectangle') as HTMLInputElement;
         const cropRadio = this.shadowDocument.getElementById('screen-sharing-selector-action-crop') as HTMLInputElement;
         if (rectangleRadio.checked) {
